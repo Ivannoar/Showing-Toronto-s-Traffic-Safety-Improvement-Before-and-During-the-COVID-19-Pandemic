@@ -2,7 +2,7 @@
 title: "Showing Toronto's Traffic Safety Improvement Before and During the COVID-19 Pandemic"
 author: 
   - Ivan Li
-thanks: "Code and data are available at: https://github.com/Ivannoar/Twilight."
+thanks: "Code and data are available at: https://github.com/Ivannoar/Showing-Toronto-s-Traffic-Safety-Improvement-Before-and-During-the-COVID-19-Pandemic."
 date: "`r format(Sys.time(), '%d %B %Y')`"
 abstract: "Vehicle collisions are an unfortunate consequence of the amount of traffic flow that cities such as Toronto experience daily, and is an issue which every city seeks to mitigate. Using data from public Toronto databases, we obtain daily police reports on vehicle collisions and analyze the data using graphs. We observe that Toronto's prevention in dangerous collisions appears to be improving, but total collisions continue to increase and confounding factors resulting from the COVID-19 pandemic make it difficult to predict effectiveness of the city's pre-pandemic actions. The study has implications for continued planning and management while mindful of external factors."
 output:
