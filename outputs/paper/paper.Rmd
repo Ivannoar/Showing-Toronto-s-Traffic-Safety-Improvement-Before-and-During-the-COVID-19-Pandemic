@@ -1,12 +1,10 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Showing Toronto's Traffic Safety Improvement Before and During the COVID-19 Pandemic"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Ivan Li
+thanks: "Code and data are available at: https://github.com/Ivannoar/Twilight."
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Vehicle collisions are an unfortunate consequence of the amount of traffic flow that cities such as Toronto experience daily, and is an issue which every city seeks to mitigate. Using data from public Toronto databases, we obtain daily police reports on vehicle collisions and analyze the data using graphs. We observe that Toronto's prevention in dangerous collisions appears to be improving, but total collisions continue to increase and confounding factors resulting from the COVID-19 pandemic make it difficult to predict effectiveness of the city's pre-pandemic actions. The study has implications for continued planning and management while mindful of external factors."
 output:
   bookdown::pdf_document2
 toc: FALSE
@@ -17,89 +15,112 @@ bibliography: references.bib
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(palmerpenguins)
+library(kableExtra)
+
+daily_collision_report_clean <- read_csv("dcr.csv")
 ```
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. For instance, Section \@ref(data). R Markdown automatically makes the sections lower case and adds a dash to spaces to generate labels, for instance, Section \@ref(first-discussion-point). 
+Every urban city must face numerous challenges daily in order for its residents and the region to function productively and encounter positive growth. As the most populated city in Canada, Toronto is no different from others in having to deal with the struggles of maintaining safety. One such issue is traffic and road safety, which only increases in severity as a city's population grows if steps are not taken to address the problem. As a result of a significant bump in traffic-related fatalities in 2016, with 78 KSI collisions resulting in death [@citeTorontoFC], the city acted by implementing a five-year action plan from 2017 to 2021 dubbed the Vision Zero Road Safety Plan, with the goal of reducing fatal and serious collisions by 20% by 2026 [@citeRSP]. 
 
-
+Using reports of traffic collision data provided by the City of Toronto, the goal of this report was to analyze the effectiveness of the Vision Zero Safety Plan by comparison of the frequency and severity of collisions since the plan was introduced. Observations were also done on the most frequently endangered locations and the change in collision frequency in these regions over time. Results from this analysis showed that the safety plan began to show promise by the end of 2019, as evident by a significant decrease in serious collisions since the city's implementations at the beginning of 2017. Areas in the city which experienced serious incidents more often showed clear improvement in traffic safety as observed by police report data. Previously dangerous neighbourhoods for traffic activity had drastically reduced collisions reported by the end of 2019. However, the independent effectiveness of the city's planning becomes impossible to analyse beginning in 2020 with the occurrence of the COVID-19 pandemic, slowing city activities internationally and contributing to a massive decrease in general vehicle activity. As well, Toronto's general traffic safety has not shown any noticeable improvement with the number of non-serious traffic collisions continuing to rise, only stopped by the pandemic's effect on the city. It remains to be seen how the pandemic will continue to affect traffic volume in the future as countries are beginning to recover from the virus. Cities including Toronto may attempt to learn from unexpected situations such as the pandemic and adjust programming accordingly. 
 
 # Data
 
-Our data is of penguins (Figure \@ref(fig:bills)).
+In order to analyze the effectiveness of the city of Toronto's traffic safety plan, this report uses the data gathered from the Police Annual Statistical Report on Traffic Collisions [@data]. This annual report is updated by the Toronto Police Service and transparently shares information related to police-related statistics, which is available for the public to see. The dataset containing information on collisions was obtained from the Toronto Open Data Portal Home and downloaded as a .csv file.  
 
-```{r bills, fig.cap="Bills of penguins", echo = FALSE}
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+The data in this report is collected by the Toronto Police Service and contains traffic collision incidents recorded by the police from 2014-2020. Police will arrive at a collision according to a number of criteria, including factors such as fatalities, damage to government property, or any incidents involving pedestrians or cyclists [@citeCollision]. If the collision does not meet these criteria, but the damage resulting from the crash exceeds a value of 2000 dollars, citizens are required to self-report their collisions which are recorded into the database. If the damage does not exceed 2000 dollars and criteria for police presence are not met, incidents are not required to be reported and thus may not appear in the database. Therefore, it is unknown how many unrecorded traffic collisions have occurred in the city and thus under-represent the total number of incidents. It may also be the case that incidents which do not require police presence are also not reported, either accidentally or purposefully by the collision's participants, leading to nonresponse bias. 
+
+To focus on the main goals of this report, `R` [@citeR] was used to open the dataset and begin the analysis. The `tidyverse` [@citetidyverse] package was used to process and clean the data for our purposes. `kableExtra` [@citekableExtra] was used to generate tables for presentation. The original dataset contained 415918 collision observations and 17 variables, which contained information such as collision identification numbers, date and time of the incident, geographical information, and severity of the crash, such as if there was injury, death, or property damage. To begin with cleaning the data, indicator columns related to index and identifier numbers were removed due to lack of usefulness. Some geographical and chronological data were also left unused as they were not needed for the focus of the analysis, and were excluded over data existing in the report. As similar variables already existed, only a few categorical terms were chosen on the basis that they would be easier to manipulate and analyse. Lastly, only incidents from 2016 to the most recent updated year, 2020, was included. This was in order to conduct analysis of the effects of the city's safety plan from 2016 and onward. After the data was cleaned, the report contained 300108 observations and 11 variables. A separate data table was then created totalling statistics of incidents by year. \@ref(tab:data)) shows a sample of the cleaned data, containing some recorded incidents.
+
+```{r data, tab.cap = "Sample of Cleaned Police Dataset", tab.width = 5, echo=FALSE}
+daily_collision_report_clean |> 
+  slice(1:5) |> 
+  kable(
+    caption = "First five rows of a dataset showing traffic collisions in Toronto",
+    col.names = c("Month", "Day", "Year", "Hour", "Divison", "Neighbourhood ID", "Neighbourhood", "Fatalities", "Injury", "Fail to Remain", "Property Damage"),
+    digits = 1,
+    booktabs = TRUE, 
+    linesep = ""
+  ) |> kable_styling(latex_options = c("striped", "scale_down"))
+```
+Toronto's Vision Zero Safety Plan aimed to decrease fatal and serious traffic collisions in the city by 20% by 2026, and has attempted to do so through initiatives such as red light cameras, improvements to cycling accessibility and safety, and speed limit reductions [@citeInitative]. The city's statistical report includes figures on whether traffic collisions are fatal, cause injury, result in a Fail to Remain case, or cause damage to property. We will consider a fatal or serious collision as one that results in death or injury. (Figure \@ref(fig:serious)) shows the frequency of traffic collisions in Toronto since Vision Zero was implemented. 
+
+```{r, echo = FALSE}
+# Coded with help of https://www.r-bloggers.com/2021/09/adding-text-labels-to-ggplot2-bar-chart/
+seriousgraph <- filter(daily_collision_report_clean, Year > 2015 & (Fatalities >= 1 | Injury_Collisions == "YES")) |> 
+  ggplot(mapping = aes(x = Year) ) +
+  geom_histogram(binwidth=0.5, fill = 'grey') + ylab("Frequency") + 
+                   geom_text(aes(label = ..count..), vjust = 5, stat = "count", colour = "white")
 ```
 
-Talk more about it.
+```{r serious, fig.cap = "Number of Fatal or Injurous Traffic Collisions in Toronto", echo = FALSE, fig.height=4, fig.width=6}
 
-Also bills and their average (Figure \@ref(fig:billssssss)). (Notice how you can change the height and width so they don't take the whole page?)
-
-```{r billssssss, fig.cap="More bills of penguins", echo = FALSE, fig.width=8, fig.height=4}
-
-# This needs to be about the random data tha tI sasmpled?
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+seriousgraph
+  
 ```
 
-Talk way more about it. 
-
-
-
-# Model
-
-\begin{equation}
-Pr(\theta | y) = \frac{Pr(y | \theta) Pr(\theta)}{Pr(y)}  (\#eq:bayes)
-\end{equation}
-
-Equation \@ref(eq:bayes) seems useful, eh?
-
-Here's a dumb example of how to use some references: In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever If we were interested in baseball data then @citeLahman could be useful. 
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
-
-
-# Results
-
-# Discussion
-
-## First discussion point
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
+According to the graph, the number of serious incidents began to drop in 2018, with a sharp decrease in serious traffic-related incidents in 2020. As a result of the COVID-19 global pandemic, Toronto declared a state of emergency on March 23 2020, resulting in closure of businesses and reduced traffic activity for the entire year [@citeTimeline]. This makes analysis of Toronto's traffic safety measures difficult as the extent to which the pandemic had an effect on traffic collisions is unknown. Most likely, the city's closures and resultant lockdowns were a large factor in the drop of serious accidents, and the ongoing pandemic may affect continued statistical analysis for years to come. 
 
 \newpage
 
-\appendix
+In a large city such as Toronto, it is understood that some areas of the city may experience higher activity, larger volume during rush hours, or relatively worse safety measures, thus creating regions where serious accidents are more likely to occur than others. (Figure \@ref(fig:neighbourhoods)) shows the top 10 neighbourhoods in serious collision count in 2016, and the relative change over time recorded by the Toronto Police Service dataset. The graph was produced from code by [@citeRachel].
 
-# Appendix {-}
+```{r, echo = FALSE}
+options(dplyr.summarise.inform = FALSE)
 
+seriouscollisions <- filter(daily_collision_report_clean, Year >= 2016 & (Fatalities >= 1 | Injury_Collisions == "YES"))
+# Coded with help of https://stackoverflow.com/questions/46020416/individual-events-into-frequency-per-year
+sc_totals <- data.frame(table(seriouscollisions$Year, seriouscollisions$Neighbourhood))
 
-# Additional details
+sc_top10 <- filter(seriouscollisions, Atom == 77| Atom == 1| Atom == 119| Atom == 137| Atom == 14| Atom == 130| Atom == 42| Atom == 76| Atom == 27| Atom == 131)
 
+sc_top10 <- sc_top10 %>% group_by(Neighbourhood, Year) %>%
+  summarise(collision_total = length(Neighbourhood), show_col_types = FALSE)
+
+sc_top10_graph <- sc_top10 %>%
+  group_by(Year) %>%
+  ggplot(aes(x = Year, y= collision_total, color = Neighbourhood)) +
+  geom_line(aes(group = Neighbourhood)) +
+  labs(color = "Neighbourhoods",
+       x = "Year",
+       y = "Number of Serious Collisions") +
+  theme_minimal()
+```
+
+```{r neighbourhoods, fig.cap = "Improvement in yearly serious collision count from 2016 top neighbourhoods", echo = FALSE, fig.height=4, fig.width=6}
+
+sc_top10_graph
+
+```
+
+Results show that these neighbourhoods which experienced the most collisions in 2016 had less serious accidents occur in the following years. Once again, a significant drop in traffic accidents is noticeable in the year 2020 as a consequence of the international pandemic. While the resulting data may suggest that Toronto's overall traffic safety is improving, (Figure \@ref(fig:total)) shows a surprising result; while overall, serious collision rates are dropping, the amount of vecicle collisions in general have been steadily increasing since 2016, and have only dropped in 2020 as a result of the pandemic. This is not extremely surprising, since as Toronto's population grows and the city expands, more traffic accidents are likely to happen. However, it is of interest that while collisions are increasing, they are on average less likely to be serious or result in death. While the goal of the Vision Zero plan to reduce serious accidents seems to be proving effective, the city should further its efforts in reducing accidents in general as a next step, in order to mitigate the amount of collisions and therefore dangerous collisions in the city.
+
+```{r, echo = FALSE}
+# Coded with help of https://www.r-bloggers.com/2021/09/adding-text-labels-to-ggplot2-bar-chart/
+totalgraph <- daily_collision_report_clean |>
+  ggplot(mapping = aes(x = Year) ) +
+  geom_histogram(binwidth=0.5, fill = 'grey') + ylab("Frequency") +
+                   geom_text(aes(label = ..count..), vjust = 5, stat = "count", colour = "white")
+```
+
+```{r total, fig.cap = "Yearly number of traffic collisions in Toronto", echo = FALSE, fig.height=4, fig.width=6}
+
+totalgraph
+  
+```
 
 \newpage
+
+# Conclusion
+
+Ultimately, Toronto's Vision Zero Safety Plan was able to show its potential by playing a factor in the reduction of serious traffic accidents since the city's deadliest year for drivers in 2016, but the program was made less effective due to international factors creating an artificial halt in traffic activity in the years following. As well, data shows that the overall frequency in collisions has risen since 2016 in spite of the city's efforts otherwise. As the world begins to recover from the pandemic and citizens return to work and normal activities, Toronto should expect that the sudden drop in accidents will not last, and as the city returns to normal, the likelihood of a vehicle collision will begin to return to and increase beyond pre-pandemic levels. While this means that the city should continue to strive for active prevention of accidents through its government programs, there may also be worth in researching how future city-stopping events can be used in order to allocate government resources where they are required the most in these circumstances. In the event of another lockdown-causing situation, hopefully in the far future, we hope that Toronto is able to learn from the unexpectedness of the present pandemic and react appropriately in the future in order to keep the city operating as much as possible while also using some potential consequences of the event to their advantage.
+
+\newpage
+
+\pagebreak
+
 
 
 # References
